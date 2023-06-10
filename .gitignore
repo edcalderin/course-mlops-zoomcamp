@@ -1,0 +1,12 @@
+zoomcamp-env
+02-experiment-tracking/**/*.parquet
+02-experiment-tracking-wandb/**/*.parquet
+03-orchestration/**/*.parquet
+04-deployment/**/*.bin
+models
+mlruns
+*.db
+*.pkl
+wandb
+mlartifacts
+__pycache__
