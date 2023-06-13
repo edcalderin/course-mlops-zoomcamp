@@ -5,7 +5,13 @@ import os
 
 app = Flask('Duration-predictor')
 
-mlflow.set_tracking_uri('http://127.0.0.1:5000')
+os.environ['AWS_PROFILE'] = 'mlflow-profile'
+
+TRACKING_SERVER_HOST = 'ec2-3-133-116-141.us-east-2.compute.amazonaws.com'
+
+PORT = 5000
+mlflow.set_tracking_uri(f'http://{TRACKING_SERVER_HOST}:{PORT}')
+#mlflow.set_tracking_uri('http://127.0.0.1:5000')
 
 RUN_ID = os.environ['RUN_ID']
 
@@ -15,7 +21,7 @@ def preprocess(features):
     return dicts
 
 def load_model(run_id: str):
-    logged_model: str = f'runs:/{run_id}/model'
+    logged_model: str = f's3://mlflow-artifacts-erick/2/{run_id}/artifacts/model'
     loaded_model = mlflow.pyfunc.load_model(logged_model)
     return loaded_model
 

@@ -12,7 +12,11 @@ OPT_EXPERIMENT_NAME = "random-forest-optuna"
 EXPERIMENT_NAME = "random-forest-best-models"
 RF_PARAMS = ['max_depth', 'n_estimators', 'min_samples_split', 'min_samples_leaf', 'random_state', 'n_jobs']
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+os.environ['AWS_PROFILE'] = 'mlflow-profile'
+TRACKING_SERVER_HOST = 'ec2-3-133-116-141.us-east-2.compute.amazonaws.com'
+PORT = 5000
+mlflow.set_tracking_uri(f'http://{TRACKING_SERVER_HOST}:{PORT}')
+
 mlflow.set_experiment(EXPERIMENT_NAME)
 mlflow.sklearn.autolog()
 
