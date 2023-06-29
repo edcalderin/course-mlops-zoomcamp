@@ -30,11 +30,11 @@ create table dummy_metrics(
 )
 """
 
-reference_data = pd.read_parquet('./data/reference.parquet')
+reference_data = pd.read_parquet('data/reference.parquet')
 with open('models/lin_reg.bin', 'rb') as f_in:
 	model = joblib.load(f_in)
 
-raw_data = pd.read_parquet('./data/green_tripdata_2023-03.parquet')
+raw_data = pd.read_parquet('data/green_tripdata_2023-03.parquet')
 
 begin = datetime.datetime(2023, 3, 1, 0, 0)
 num_features = ['passenger_count', 'trip_distance', 'fare_amount', 'total_amount']
