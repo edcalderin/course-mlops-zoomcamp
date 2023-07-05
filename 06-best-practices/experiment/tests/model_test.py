@@ -1,4 +1,4 @@
-import lambda_function
+import model
 
 def test_preprocess():
     ride = {
@@ -7,13 +7,14 @@ def test_preprocess():
         "trip_distance": 4
     }
 
-    output = lambda_function.preprocess(ride)
     expected_features = {'trip_distance': 4, 'PU_DO': '23_12'}
+    model_service = model.ModelService(None, True, None)
+    output = model_service.preprocess(ride)
     assert output==expected_features
 
 def test_base64_decode():
     input = 'ewogICAgICAgICJyaWRlIjogewogICAgICAgICAgICAiUFVMb2NhdGlvbklEIjogMTMwLAogICAgICAgICAgICAiRE9Mb2NhdGlvbklEIjogMjA1LAogICAgICAgICAgICAidHJpcF9kaXN0YW5jZSI6IDMuNjYKICAgICAgICB9LCAKICAgICAgICAicmlkZV9pZCI6IDI1NgogICAgfQ=='
-    output = lambda_function.base64_decode(input)
+    output = model.base64_decode(input)
     expected_value = {
         "ride": {
             "PULocationID": 130,
@@ -35,6 +36,37 @@ class ModelMock:
 
 def test_predict():
     features = [{'trip_distance': 4, 'PU_DO': '23_12'}]
-    model = ModelMock(10.0)
-    predictions = lambda_function.predict(model, features)
-    assert predictions == [10.0]
+    model_mock = ModelMock(10.0)
+    model_service = model.ModelService(model_mock, True, '')
+    predictions = model_service.predict(features)
+    assert predictions == 10.0
+
+def test_lambda_handler():
+    EVENT = {
+        "Records": [
+            {
+                "kinesis": {
+                    "data": "ewogICAgICAgICJyaWRlIjogewogICAgICAgICAgICAiUFVMb2NhdGlvbklEIjogIjIzIiwKICAgICAgICAgICAgIkRPTG9jYXRpb25JRCI6ICIxMiIsCiAgICAgICAgICAgICJ0cmlwX2Rpc3RhbmNlIjogNAogICAgICAgIH0sCiAgICAgICAgInJpZGVfaWQiOiA1CiAgICB9",
+                }
+            }
+        ]
+    }
+    RUN_ID: str = '123'
+    expected = {
+        'predictions':
+            [
+                {
+                    'model': 'ride_duration_prediction_model',
+                    'version': RUN_ID,
+                    'prediction': {
+                        'ride_duration': 10.0,
+                        'ride_id': 5
+                    }
+                }
+            ]
+    }
+
+    model_mock = ModelMock(10.0)
+    model_service = model.ModelService(model_mock, True, RUN_ID)
+    output = model_service.lambda_handler(EVENT)
+    assert output == expected
