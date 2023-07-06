@@ -2,9 +2,21 @@ import base64
 import boto3
 import json
 import mlflow
+import os
+
+def get_model_location(run_id: str) -> str:
+    model_location = os.getenv('MODEL_LOCATION')
+    if model_location is not None:
+        return model_location
+
+    model_bucket = os.getenv('MODEL_BUCKET', 'mlflow-artifacts-erick')
+    experiment_id = os.getenv('EXPERIMENT_ID', '1')
+
+    logged_model: str = f's3://{model_bucket}/{experiment_id}/{run_id}/artifacts/artifacts/model_mlflow'
+    return logged_model
 
 def load_model(run_id: str):
-    logged_model: str = f's3://mlflow-artifacts-erick/1/{run_id}/artifacts/artifacts/model_mlflow'
+    logged_model: str = get_model_location(run_id)
     return mlflow.pyfunc.load_model(logged_model)
 
 class ModelService:
