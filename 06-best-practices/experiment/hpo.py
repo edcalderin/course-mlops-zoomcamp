@@ -51,7 +51,7 @@ def prepare_dictionaries(df: pd.DataFrame):
     default=1,
     help="The number of parameter evaluations for the optimizer to explore"
 )
-def run_optimization(data_path: str, num_trials: int):
+def run_optimization(num_trials: int=None):
 
     df_train = read_dataframe('data/green/green_tripdata_2022-01.parquet')
     X_train = prepare_dictionaries(df_train.drop('duration', axis=1))

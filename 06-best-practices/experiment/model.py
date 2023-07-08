@@ -1,8 +1,8 @@
 import base64
-import boto3
-import json
-import mlflow
 import os
+import json
+import boto3
+import mlflow
 
 def get_model_location(run_id: str) -> str:
     model_location = os.getenv('MODEL_LOCATION')
@@ -20,9 +20,8 @@ def load_model(run_id: str):
     return mlflow.pyfunc.load_model(logged_model)
 
 class ModelService:
-    def __init__(self, model, test_run: bool, run_id: str, callbacks = None) -> None:
+    def __init__(self, model, run_id: str, callbacks = None) -> None:
         self.model = model
-        self.test_run = test_run
         self.run_id = run_id
         self.callbacks = callbacks or []
 
@@ -46,6 +45,7 @@ class ModelService:
             ride_event = base64_decode(encoded_data)
 
             ride, ride_id = ride_event['ride'], ride_event['ride_id']
+
             X = self.preprocess(ride)
 
             prediction = self.predict(X)
@@ -58,7 +58,7 @@ class ModelService:
                     'ride_id': ride_id
                 }
             }
-
+            print(f'{prediction_event=}')
             for callback in self.callbacks:
                 callback(prediction_event)
 
@@ -67,6 +67,7 @@ class ModelService:
         return { 'predictions': predictions }
 
 class KinesisCallback:
+
     def __init__(self, kinesis_client, prediction_output_stream: str) -> None:
         self.kinesis_client = kinesis_client
         self.prediction_output_stream = prediction_output_stream
@@ -78,18 +79,26 @@ class KinesisCallback:
             PartitionKey='1'
         )
 
+def create_kinesis_client():
+    endpoint_url = os.getenv('KINESIS_ENDPOINT_URL')
+    print(f'{endpoint_url=}')
+
+    if endpoint_url is None:
+        return boto3.client('kinesis')
+    return boto3.client('kinesis', endpoint_url=endpoint_url)
+
 def init(prediction_output_stream, run_id: str, test_run: bool):
     model = load_model(run_id)
 
     callbacks = []
 
     if not test_run:
-        kinesis_client = boto3.client('kinesis')
+        kinesis_client = create_kinesis_client()
 
         kinesis_callback = KinesisCallback(kinesis_client, prediction_output_stream)
         callbacks.append(kinesis_callback.put_record)
 
-    return ModelService(model, test_run, run_id, callbacks)
+    return ModelService(model, run_id, callbacks)
 
 def base64_decode(encoded_data: str):
     decoded_data= base64.b64decode(encoded_data).decode('utf-8')

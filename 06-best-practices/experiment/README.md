@@ -36,3 +36,40 @@ sh ./integration-tests/run.sh
 ```bash
 source $(pipenv --venv)/Scripts/activate
 ```
+
+## Localstack
+
+### Creating awslocal command
+
+```bash
+export awslocal="AWS_ACCESS_KEY_ID=abc AWS_SECRET_ACCESS_KEY=xyz AWS_DEFAULT_REGION=us-east-2 aws --endpoint-url=http://127.0.0.1:4566"
+```
+
+### List streams
+```bash
+awslocal kinesis list-streams
+```
+
+```bash
+awslocal kinesis create-stream \
+    --stream-name ride-predictions \
+    --shard-count 1
+```
+
+## Reading from the stream
+
+```bash
+export KINESIS_STREAM_OUTPUT=ride_predictions
+export SHARD='shardId-000000000000'
+
+SHARD_ITERATOR=$(awslocal kinesis get-shard-iterator \
+        --shard-id ${SHARD} \
+        --shard-iterator-type TRIM_HORIZON \
+        --stream-name ${KINESIS_STREAM_OUTPUT} \
+        --query 'ShardIterator'
+)
+
+RESULT=$(awslocal kinesis get-records --shard-iterator $SHARD_ITERATOR)
+
+echo ${RESULT} | jq -r '.Records[0].Data' | base64 --decode
+

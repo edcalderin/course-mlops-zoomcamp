@@ -1,3 +1,4 @@
+from pathlib import Path
 import model
 
 def test_preprocess():
@@ -8,13 +9,22 @@ def test_preprocess():
     }
 
     expected_features = {'trip_distance': 4, 'PU_DO': '23_12'}
-    model_service = model.ModelService(None, True, None)
+    model_service = model.ModelService(
+        model=None,
+        run_id=None)
+
     output = model_service.preprocess(ride)
-    assert output==expected_features
+    assert output == expected_features
+
+def read_text(file: Path)->str:
+    test_directory = Path(__file__).parent
+
+    with open(test_directory/file, 'rt', encoding='utf-8') as in_f:
+        return in_f.read().strip()
 
 def test_base64_decode():
-    input = 'ewogICAgICAgICJyaWRlIjogewogICAgICAgICAgICAiUFVMb2NhdGlvbklEIjogMTMwLAogICAgICAgICAgICAiRE9Mb2NhdGlvbklEIjogMjA1LAogICAgICAgICAgICAidHJpcF9kaXN0YW5jZSI6IDMuNjYKICAgICAgICB9LCAKICAgICAgICAicmlkZV9pZCI6IDI1NgogICAgfQ=='
-    output = model.base64_decode(input)
+    base64 = read_text('data.b64')
+    output = model.base64_decode(base64)
     expected_value = {
         "ride": {
             "PULocationID": 130,
@@ -46,7 +56,7 @@ def test_lambda_handler():
         "Records": [
             {
                 "kinesis": {
-                    "data": "ewogICAgICAgICJyaWRlIjogewogICAgICAgICAgICAiUFVMb2NhdGlvbklEIjogIjIzIiwKICAgICAgICAgICAgIkRPTG9jYXRpb25JRCI6ICIxMiIsCiAgICAgICAgICAgICJ0cmlwX2Rpc3RhbmNlIjogNAogICAgICAgIH0sCiAgICAgICAgInJpZGVfaWQiOiA1CiAgICB9",
+                    "data": read_text('data.b64'),
                 }
             }
         ]
@@ -60,13 +70,14 @@ def test_lambda_handler():
                     'version': RUN_ID,
                     'prediction': {
                         'ride_duration': 10.0,
-                        'ride_id': 5
+                        'ride_id': 256
                     }
                 }
             ]
     }
 
     model_mock = ModelMock(10.0)
-    model_service = model.ModelService(model_mock, True, RUN_ID)
+    model_service = model.ModelService(model_mock, RUN_ID)
     output = model_service.lambda_handler(EVENT)
+    print(output)
     assert output == expected

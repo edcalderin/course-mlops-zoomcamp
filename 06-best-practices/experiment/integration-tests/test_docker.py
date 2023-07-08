@@ -1,3 +1,4 @@
+#pylint: disable= duplicate-code
 import requests
 from deepdiff import DeepDiff
 
@@ -12,7 +13,7 @@ event = {
 }
 
 URL = 'http://localhost:8080/2015-03-31/functions/function/invocations'
-response = requests.post(URL, json=event).json()
+response = requests.post(URL, json=event, timeout=1).json()
 
 RUN_ID = '77fb2593f2ad4558b83b7718643a8ed8'
 RUN_ID = 'Test123'
@@ -32,6 +33,7 @@ expected = {
 
 diff = DeepDiff(response, expected, significant_digits=1)
 
+print(f'{response=}')
 print(f'{diff=}')
 
 assert 'type_changes' not in diff
