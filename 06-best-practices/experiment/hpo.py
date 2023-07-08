@@ -1,14 +1,15 @@
 import os
 import pickle
+
 import click
 import mlflow
 import optuna
 import pandas as pd
 from optuna.samplers import TPESampler
-from sklearn.pipeline import make_pipeline
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.feature_extraction import DictVectorizer
 from sklearn.metrics import mean_squared_error
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.feature_extraction import DictVectorizer
 
 os.environ['AWS_PROFILE'] = 'mlflow-profile'
 TRACKING_SERVER_HOST = 'ec2-3-15-226-79.us-east-2.compute.amazonaws.com'
@@ -20,6 +21,7 @@ mlflow.set_experiment("random-forest-optuna2")
 def load_pickle(filename):
     with open(filename, "rb") as f_in:
         return pickle.load(f_in)
+
 
 def read_dataframe(filename: str):
     df = pd.read_parquet(filename)
@@ -33,6 +35,7 @@ def read_dataframe(filename: str):
 
     return df
 
+
 def prepare_dictionaries(df: pd.DataFrame):
     df['PU_DO'] = df['PULocationID'] + '_' + df['DOLocationID']
     categorical = ['PU_DO']
@@ -40,19 +43,19 @@ def prepare_dictionaries(df: pd.DataFrame):
     dicts = df[categorical + numerical].to_dict(orient='records')
     return dicts
 
+
 @click.command()
 @click.option(
     "--data_path",
     default="./output",
-    help="Location where the processed NYC taxi trip data was saved"
+    help="Location where the processed NYC taxi trip data was saved",
 )
 @click.option(
     "--num_trials",
     default=1,
-    help="The number of parameter evaluations for the optimizer to explore"
+    help="The number of parameter evaluations for the optimizer to explore",
 )
-def run_optimization(num_trials: int=None):
-
+def run_optimization(num_trials: int = None):
     df_train = read_dataframe('data/green/green_tripdata_2022-01.parquet')
     X_train = prepare_dictionaries(df_train.drop('duration', axis=1))
     y_train = df_train['duration']
@@ -68,7 +71,7 @@ def run_optimization(num_trials: int=None):
             'min_samples_split': trial.suggest_int('min_samples_split', 2, 10, 1),
             'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 4, 1),
             'random_state': 42,
-            'n_jobs': -1
+            'n_jobs': -1,
         }
         with mlflow.start_run():
             mlflow.set_tag('model', 'RandomForestRegressor')
@@ -76,7 +79,7 @@ def run_optimization(num_trials: int=None):
 
             pipeline = make_pipeline(
                 DictVectorizer(),
-                RandomForestRegressor(**params)
+                RandomForestRegressor(**params),
             )
             pipeline.fit(X_train, y_train)
             y_pred = pipeline.predict(X_val)

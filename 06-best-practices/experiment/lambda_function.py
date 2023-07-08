@@ -1,6 +1,8 @@
 import os
-import model
+
 import mlflow
+
+import model
 
 PREDICTIONS_STREAM_NAME = os.getenv('PREDICTIONS_STREAM_NAME')
 RUN_ID = os.getenv('RUN_ID')
@@ -10,7 +12,8 @@ PORT = 5000
 mlflow.set_tracking_uri(f'http://{TRACKING_SERVER_HOST}:{PORT}')
 
 model_service = model.init(PREDICTIONS_STREAM_NAME, RUN_ID, TEST_RUN)
-    
+
+
 def lambda_handler(event, context):
     # pylint: disable=unused-argument
     return model_service.lambda_handler(event)
