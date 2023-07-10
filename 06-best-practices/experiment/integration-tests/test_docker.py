@@ -5,10 +5,10 @@ import requests
 from deepdiff import DeepDiff
 
 with open('event.json', 'rt', encoding='utf-8') as file:
-    event = json.loads(file)
+    event = json.load(file)
 
 URL = 'http://localhost:8080/2015-03-31/functions/function/invocations'
-response = requests.post(URL, json=event, timeout=1).json()
+response = requests.post(URL, json=event, timeout=100).json()
 
 RUN_ID = '77fb2593f2ad4558b83b7718643a8ed8'
 RUN_ID = 'Test123'
